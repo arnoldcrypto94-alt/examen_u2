@@ -8,4 +8,5 @@ namespace FoodCampus.Application.Services;
 public interface IPedidoService
 {
     Task<int> CrearPedidoCompletoAsync(int idRestaurante, Pedido pedido, List<DetallePedido> detalles);
+    Task<List<Platillo>> ObtenerMenuAsync(int idRestaurante);
 }

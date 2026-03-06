@@ -22,18 +22,18 @@ public class Program
             // Repositorios
             .AddScoped<IRestauranteRepository, RestauranteRepository>()
             .AddScoped<IPedidoRepository, PedidoRepository>()
+            .AddScoped<IPlatilloRepository, PlatilloRepository>()
             
             // Servicios de Aplicación
             .AddScoped<IRestauranteService, RestauranteService>()
             .AddScoped<IPedidoService, PedidoService>()
-            
-            // Rigor C# 14: Registro de genéricos no vinculados (Demostración)
-            // .AddScoped(typeof(IRepository<>), typeof(Repository<>))
+            .AddScoped<IPlatilloService, PlatilloService>()
             
             .BuildServiceProvider();
 
         var restauranteService = serviceProvider.GetRequiredService<IRestauranteService>();
         var pedidoService = serviceProvider.GetRequiredService<IPedidoService>();
+        var platilloService = serviceProvider.GetRequiredService<IPlatilloService>();
 
         Console.Clear();
         Console.WriteLine("=== SISTEMA FOODCAMPUS - BIENVENIDO ===");
@@ -58,6 +58,12 @@ public class Program
                         await CrearPedidoUI(pedidoService);
                         break;
                     case "4":
+                        await AgregarPlatilloUI(platilloService);
+                        break;
+                    case "5":
+                        await EliminarPlatilloUI(platilloService);
+                        break;
+                    case "6":
                         Console.WriteLine("Saliendo del sistema...");
                         return;
                     default:
@@ -81,8 +87,64 @@ public class Program
         Console.WriteLine("1. Registrar Restaurante");
         Console.WriteLine("2. Listar Restaurantes");
         Console.WriteLine("3. Crear Pedido (Maestro-Detalle)");
-        Console.WriteLine("4. Salir");
+        Console.WriteLine("4. Agregar Platillo al Menú");
+        Console.WriteLine("5. Eliminar Platillo del Menú");
+        Console.WriteLine("6. Salir");
         Console.Write("Seleccione una opción: ");
+    }
+
+    private static async Task AgregarPlatilloUI(IPlatilloService service)
+    {
+        Console.WriteLine("\n--- AGREGAR PLATILLO ---");
+        Console.Write("ID Restaurante: ");
+        if (!int.TryParse(Console.ReadLine(), out int idRest)) return;
+        
+        Console.Write("Nombre del Platillo: ");
+        string nombre = Console.ReadLine() ?? "";
+        
+        Console.Write("Precio: ");
+        if (!decimal.TryParse(Console.ReadLine(), out decimal precio)) return;
+
+        var platillo = new Platillo(0, idRest, nombre, precio);
+        int id = await service.AgregarPlatilloAsync(platillo);
+        MostrarExito($"Platillo agregado con ID: {id}");
+    }
+
+    private static async Task EliminarPlatilloUI(IPlatilloService service)
+    {
+        Console.WriteLine("\n--- ELIMINAR PLATILLO ---");
+        Console.Write("ID Restaurante para ver menú: ");
+        if (!int.TryParse(Console.ReadLine(), out int idRest)) return;
+
+        var menu = await service.ListarPlatillosAsync(idRest);
+        if (menu.Count == 0)
+        {
+            Console.WriteLine("El restaurante no tiene platillos registrados.");
+            return;
+        }
+
+        Console.WriteLine("\n--- MENÚ ACTUAL ---");
+        foreach (var p in menu)
+        {
+            Console.WriteLine($"[{p.IdPlatillo}] {p.Nombre} - ${p.Precio}");
+        }
+
+        Console.Write("\nID del Platillo a eliminar: ");
+        if (!int.TryParse(Console.ReadLine(), out int idPlat)) return;
+
+        Console.Write("¿Está seguro de eliminar este platillo? (Y/N): ");
+        string confirm = Console.ReadLine()?.ToUpper() ?? "N";
+        
+        if (confirm == "Y")
+        {
+            bool eliminado = await service.EliminarPlatilloAsync(idPlat);
+            if (eliminado) MostrarExito("Platillo eliminado exitosamente.");
+            else MostrarError("No se pudo eliminar el platillo (ID no encontrado).");
+        }
+        else
+        {
+            Console.WriteLine("Operación cancelada.");
+        }
     }
 
     private static async Task RegistrarRestauranteUI(IRestauranteService service)
@@ -93,7 +155,6 @@ public class Program
         Console.Write("Especialidad: ");
         string especialidad = Console.ReadLine() ?? "";
         
-        // El dominio valida el nombre vía 'field' en el servicio si se envían valores nulos/vacíos
         var restaurante = new Restaurante(0, nombre, especialidad, new TimeOnly(9, 0), new TimeOnly(21, 0));
         
         int id = await service.RegistrarNuevoRestauranteAsync(restaurante);
@@ -114,20 +175,74 @@ public class Program
     {
         Console.WriteLine("\n--- CREAR NUEVO PEDIDO ---");
         Console.Write("ID Restaurante: ");
-        int idRest = int.Parse(Console.ReadLine() ?? "0");
-        Console.Write("ID Usuario: ");
-        int idUser = int.Parse(Console.ReadLine() ?? "0");
+        if (!int.TryParse(Console.ReadLine(), out int idRest)) return;
+        
+        // 1. Mostrar Menú del Restaurante
+        var menu = await service.ObtenerMenuAsync(idRest);
+
+        if (menu.Count == 0)
+        {
+            MostrarError("El restaurante seleccionado no tiene platillos en su menú. Regresando al menú principal...");
+            return;
+        }
+
+        Console.WriteLine("\n--- MENÚ DISPONIBLE ---");
+        foreach (var p in menu)
+        {
+            Console.WriteLine($"[{p.IdPlatillo}] {p.Nombre} - ${p.Precio}");
+        }
+
+        Console.Write("\nID Usuario: ");
+        if (!int.TryParse(Console.ReadLine(), out int idUser)) return;
+
+        // 2. Captura Dinámica de Detalles
+        var detalles = CapturarDetallesPedido(menu);
+        
+        if (detalles.Count == 0)
+        {
+            MostrarError("No se seleccionaron platillos. Pedido cancelado.");
+            return;
+        }
 
         var pedido = new Pedido(0, idUser, DateTime.Now, 15.00m);
         
-        var detalles = new List<DetallePedido>
-        {
-            new DetallePedido(0, 0, 1, 2, 100.00m),
-            new DetallePedido(0, 0, 2, 1, 50.00m)
-        };
-
         int idPedido = await service.CrearPedidoCompletoAsync(idRest, pedido, detalles);
         MostrarExito($"Pedido Maestro-Detalle creado exitosamente con ID: {idPedido}");
+        
+        decimal total = detalles.Sum(d => d.Subtotal) + pedido.CostoEnvio;
+        Console.WriteLine($"Total a Pagar (inc. envío): ${total}");
+    }
+
+    private static List<DetallePedido> CapturarDetallesPedido(List<Platillo> menu)
+    {
+        var detalles = new List<DetallePedido>();
+        bool continuar = true;
+
+        while (continuar)
+        {
+            Console.Write("\nIngrese ID del platillo (o '0' para finalizar): ");
+            if (!int.TryParse(Console.ReadLine(), out int idPlat) || idPlat == 0) break;
+
+            var platillo = menu.FirstOrDefault(p => p.IdPlatillo == idPlat);
+            if (platillo == null)
+            {
+                MostrarError("ID de platillo no válido. Intente de nuevo.");
+                continue;
+            }
+
+            Console.Write($"Cantidad para '{platillo.Nombre}': ");
+            if (!int.TryParse(Console.ReadLine(), out int cantidad) || cantidad <= 0)
+            {
+                MostrarError("Cantidad no válida.");
+                continue;
+            }
+
+            decimal subtotal = platillo.Precio * cantidad;
+            detalles.Add(new DetallePedido(0, 0, idPlat, cantidad, subtotal));
+            Console.WriteLine($"Agregado: {platillo.Nombre} x{cantidad} = ${subtotal}");
+        }
+
+        return detalles;
     }
 
     private static void MostrarError(string mensaje)
