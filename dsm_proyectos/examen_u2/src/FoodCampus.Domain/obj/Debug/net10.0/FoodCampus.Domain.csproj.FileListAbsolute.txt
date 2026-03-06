@@ -1,0 +1,12 @@
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.AssemblyInfoInputs.cache
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.AssemblyInfo.cs
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.csproj.CoreCompileInputs.cache
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.sourcelink.json
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\bin\Debug\net10.0\FoodCampus.Domain.deps.json
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\bin\Debug\net10.0\FoodCampus.Domain.dll
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\bin\Debug\net10.0\FoodCampus.Domain.pdb
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.dll
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\refint\FoodCampus.Domain.dll
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\FoodCampus.Domain.pdb
+C:\dsm_proyectos\examen_u2\src\FoodCampus.Domain\obj\Debug\net10.0\ref\FoodCampus.Domain.dll
